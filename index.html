@@ -71,6 +71,19 @@ ol.rank li:first-child{border-top:0}
 .next a{display:inline-block;text-decoration:none;font-weight:600;padding:11px 16px;border-radius:8px;border:1.5px solid var(--teal-deep);color:var(--teal-deep);background:#fff}
 .next a.primary{background:var(--teal-deep);color:#fff}
 .empty{color:var(--muted);margin:0}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 6px}
+.filters .field{flex:1 1 170px}
+ol.opps{list-style:none;margin:0;padding:0}
+ol.opps li{padding:13px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:5px}
+ol.opps a.t{font-weight:600;text-decoration:none;overflow-wrap:anywhere}
+ol.opps a.t:hover{text-decoration:underline}
+.who{font-size:13.5px;color:var(--muted)}
+.pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pill{font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
+.pill.sa{background:#eef4e2;border-color:#cfe0ad;color:#3f5a08}
+.pill.due{background:#fbf3dc;border-color:#ecd690;color:#6b5206}
+.pill.soon{background:#f8e6e6;border-color:#e6bcbc;color:#8a2f2f}
+button.more{font:inherit;font-weight:600;margin-top:12px;padding:10px 16px;border-radius:8px;border:1.5px solid var(--teal-deep);background:#fff;color:var(--teal-deep);cursor:pointer}
 footer{max-width:920px;margin:0 auto;padding:0 16px 32px;font-size:12.5px;color:var(--muted)}
 footer p{margin:0 0 6px;max-width:80ch}
 [hidden]{display:none!important}
@@ -136,16 +149,28 @@ footer p{margin:0 0 6px;max-width:80ch}
       </section>
     </div>
 
+    <section class="card" style="margin-bottom:18px">
+      <h2>Open opportunities right now</h2>
+      <p class="lede" id="oMeta">Loading open opportunities...</p>
+      <div class="filters" id="oFilters" hidden>
+        <div class="field"><label for="oSA">Set aside</label><select id="oSA"></select></div>
+        <div class="field"><label for="oType">Notice type</label><select id="oType"></select></div>
+        <div class="field"><label for="oSt">Place of performance</label><select id="oSt"></select></div>
+      </div>
+      <ol class="opps" id="oList"></ol>
+      <button class="more" id="oMore" type="button" hidden>Show more</button>
+    </section>
+
     <section class="card">
-      <h2>Next step</h2>
-      <p class="lede">See what is open for bid right now in this code, then check the spending detail behind these numbers.</p>
+      <h2>Go to the source</h2>
+      <p class="lede">Check the full notice list on SAM.gov and the spending detail behind these numbers.</p>
       <div class="next" id="rNext"></div>
     </section>
   </div>
 </main>
 
 <footer>
-  <p>Source: USAspending.gov, pulled live each time you search. Figures are federal prime contract obligations (award types A, B, C and D) grouped by awarding agency. Department of Defense data posts about 90 days late, so the most recent months can be incomplete.</p>
+  <p>Sources: USAspending.gov, pulled live each time you search, and the public SAM.gov Contract Opportunities file, refreshed every night. Figures are federal prime contract obligations (award types A, B, C and D) grouped by awarding agency. Department of Defense data posts about 90 days late, so the most recent months can be incomplete.</p>
   <p>This tool is for market research and training. It does not predict future awards.</p>
   <p>&copy; 2026 Ayo Strategic Consulting Group, LLC. All rights reserved.</p>
 </footer>
@@ -156,7 +181,48 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=new Date();
 const LAST_FY=now.getMonth()>=9?now.getFullYear():now.getFullYear()-1;
+const DATA='https://raw.githubusercontent.com/Ayo-SCG/agency-finder/data/opps/';
 let seq=0,sugTimer=null,lastSugg=[];
+let oppIndex=null,opps=[],oShown=25;
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function nice(d){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d||'');return m?MON[Number(m[2])-1]+' '+Number(m[3])+', '+m[1]:'';}
+function daysLeft(d){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d||'');if(!m)return null;const t=new Date();return Math.round((Date.UTC(m[1],m[2]-1,m[3])-Date.UTC(t.getFullYear(),t.getMonth(),t.getDate()))/864e5);}
+function fillSel(id,all,vals){const el=$(id);el.innerHTML='<option value="">'+all+'</option>'+vals.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('');}
+function uniq(key,blank){const m={};opps.forEach(o=>{m[o[key]||blank]=1;});return Object.keys(m).sort();}
+function renderOpps(){
+  const sa=$('oSA').value,ty=$('oType').value,st=$('oSt').value;
+  const rows=opps.filter(o=>(!sa||(o.sa||'No set aside')===sa)&&(!ty||o.type===ty)&&(!st||(o.st||'Not listed')===st));
+  $('oList').innerHTML=rows.slice(0,oShown).map(o=>{
+    const dl=daysLeft(o.due),who=[o.ag,o.sub,o.off].filter(Boolean).map(title).join('  ·  ');
+    let h='<li><a class="t" href="'+esc(o.link)+'" target="_blank" rel="noopener">'+esc(o.t)+'</a>';
+    if(who)h+='<span class="who">'+esc(who)+'</span>';
+    h+='<span class="pills">';
+    if(o.type)h+='<span class="pill">'+esc(o.type)+'</span>';
+    if(o.sa)h+='<span class="pill sa">'+esc(o.sa)+'</span>';
+    if(o.st)h+='<span class="pill">'+esc(o.st)+'</span>';
+    h+=dl===null?'<span class="pill">No deadline listed</span>':'<span class="pill '+(dl<=7?'soon':'due')+'">Due '+nice(o.due)+' ('+(dl===0?'today':dl===1?'1 day left':dl+' days left')+')</span>';
+    return h+'</span></li>';}).join('')||'<li><p class="empty">No open notices match these filters.</p></li>';
+  $('oMore').hidden=rows.length<=oShown;
+  $('oMore').textContent='Show more ('+Math.max(0,rows.length-oShown)+' left)';
+  return rows.length;
+}
+async function loadOpps(code,my){
+  opps=[];oShown=25;$('oList').innerHTML='';$('oFilters').hidden=true;$('oMore').hidden=true;$('oMeta').textContent='Loading open opportunities...';
+  try{
+    if(!oppIndex){const r=await fetch(DATA+'index.json');if(!r.ok)throw new Error('no data');oppIndex=await r.json();}
+    const codes=Object.keys(oppIndex.counts).filter(c=>c.indexOf(code)===0);
+    if(codes.length>60){if(my===seq)$('oMeta').textContent='Enter a full six digit code to list open opportunities here.';return;}
+    const lists=await Promise.all(codes.map(c=>fetch(DATA+c+'.json').then(r=>r.ok?r.json():[]).catch(()=>[])));
+    if(my!==seq)return;
+    opps=[].concat.apply([],lists).sort((a,b)=>(a.due||'9999')<(b.due||'9999')?-1:1);
+    const when=nice(oppIndex.updated);
+    if(!opps.length){$('oMeta').textContent='No open notices in this code as of '+when+'. Agencies may still be buying through existing contracts.';return;}
+    fillSel('oSA','All set asides',uniq('sa','No set aside'));fillSel('oType','All notice types',uniq('type',''));fillSel('oSt','All states',uniq('st','Not listed'));
+    $('oFilters').hidden=false;
+    $('oMeta').textContent=opps.length+' open notices in this code, soonest deadline first. Refreshed from SAM.gov on '+when+'.';
+    renderOpps();
+  }catch(e){if(my===seq)$('oMeta').textContent='The nightly opportunity list is not available right now. Use the SAM.gov button below.';}
+}
 
 function money(n){
   n=Number(n)||0;const a=Math.abs(n),s=n<0?'-':'';
@@ -207,6 +273,7 @@ async function run(code){
   const my=++seq,fy=Number($('fy').value);
   $('sugg').hidden=true;$('q').value=code;
   setMsg('Pulling live numbers from USAspending for '+code+'...');
+  loadOpps(code,my);
   try{
     const [ag,agSB,sub,subSB,recSB,recAll,tAll,tSB,ref]=await Promise.all([
       cat('awarding_agency',code,fy,false,10),
@@ -277,6 +344,8 @@ function suggest(text){
 for(let y=LAST_FY;y>=LAST_FY-2;y--){const o=document.createElement('option');o.value=y;o.textContent='FY '+y;$('fy').appendChild(o);}
 $('q').addEventListener('input',e=>suggest(e.target.value.trim()));
 $('sugg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)run(b.dataset.c);});
+['oSA','oType','oSt'].forEach(id=>$(id).addEventListener('change',()=>{oShown=25;renderOpps();}));
+$('oMore').addEventListener('click',()=>{oShown+=25;renderOpps();});
 $('fy').addEventListener('change',()=>{const c=$('q').value.trim();if(/^\d{2,6}$/.test(c))run(c);});
 $('f').addEventListener('submit',e=>{
   e.preventDefault();

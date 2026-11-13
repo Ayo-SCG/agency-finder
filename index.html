@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agency Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: one column. Search on top, summary, then ranked lists. Brand hues, with a deeper teal for text and buttons so everything passes contrast. */
+  --teal:#5E8894; --teal-deep:#2E5560; --green:#60870C; --gold:#D4A017; --red:#C55A5A;
+  --ink:#2B3A40; --muted:#5A6B72; --bg:#f5f7fa; --line:#e4e8ec; --surface:#ffffff;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5}
+a{color:var(--teal-deep)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.top{background:var(--teal-deep);color:#fff;padding:18px 20px 16px}
+.top .co{font-size:12px;letter-spacing:.14em;font-weight:600;opacity:.9}
+.top h1{margin:4px 0 2px;font-size:28px;line-height:1.15;font-weight:700;text-wrap:balance}
+.top p{margin:0;font-size:15px;opacity:.92;max-width:60ch}
+.stripe{height:6px;background:linear-gradient(90deg,var(--teal) 0 34%,var(--green) 34% 67%,var(--gold) 67% 100%)}
+main{max-width:920px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px;flex:1 1 260px}
+.field.fy{flex:0 0 150px}
+label{font-size:13px;font-weight:600;color:var(--muted)}
+input,select{font:inherit;color:var(--ink);padding:11px 12px;border:1.5px solid #b9c4ca;border-radius:8px;background:#fff;width:100%}
+button.go{font:inherit;font-weight:600;color:#fff;background:var(--teal-deep);border:0;border-radius:8px;padding:12px 22px;cursor:pointer}
+button.go:hover{background:#244650}
+#sugg{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+#sugg button{font:inherit;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;cursor:pointer;color:var(--ink)}
+#sugg button:hover{border-color:var(--teal)}
+#sugg b{color:var(--teal-deep);font-variant-numeric:tabular-nums;margin-right:8px}
+.hint{font-size:13px;color:var(--muted);margin:10px 0 0}
+#msg{font-weight:500}
+#msg.err{color:#9c3b3b}
+h2{font-size:19px;margin:0 0 4px;color:var(--teal-deep);text-wrap:balance}
+.lede{margin:0 0 14px;color:var(--muted);font-size:14px;max-width:65ch}
+.code{font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--green)}
+.title{font-size:22px;font-weight:700;margin:2px 0 12px;line-height:1.25;text-wrap:balance}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.stat{border-left:4px solid var(--teal);padding:4px 0 4px 12px}
+.stat.sb{border-color:var(--green)}
+.stat .n{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat .l{font-size:13px;color:var(--muted)}
+.trend{display:flex;align-items:flex-end;gap:8px;height:150px;margin-top:18px}
+.trend div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%;min-width:0}
+.trend i{display:block;width:100%;max-width:64px;background:#b7cbd2;border-radius:4px 4px 0 0;min-height:2px}
+.trend .on i{background:var(--teal-deep)}
+.trend span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.trend .on span{color:var(--ink);font-weight:600}
+ol.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+ol.rank li{display:grid;grid-template-columns:28px 1fr auto;column-gap:10px;row-gap:5px;padding:11px 0;border-top:1px solid var(--line);align-items:baseline}
+ol.rank li:first-child{border-top:0}
+.rk{font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.nm{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.nm small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{grid-column:2 / 4;height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--teal);border-radius:5px}
+.sbn{grid-column:2 / 4;font-size:13px;color:var(--muted)}
+.sbn b{color:#4a6a09}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.next{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.next a{display:inline-block;text-decoration:none;font-weight:600;padding:11px 16px;border-radius:8px;border:1.5px solid var(--teal-deep);color:var(--teal-deep);background:#fff}
+.next a.primary{background:var(--teal-deep);color:#fff}
+.empty{color:var(--muted);margin:0}
+footer{max-width:920px;margin:0 auto;padding:0 16px 32px;font-size:12.5px;color:var(--muted)}
+footer p{margin:0 0 6px;max-width:80ch}
+[hidden]{display:none!important}
+@media (max-width:480px){.top h1{font-size:23px}.field.fy{flex:1 1 120px}button.go{flex:1 1 100%}.trend span.v{display:none}}
+@media (prefers-reduced-motion:no-preference){.bar i,.trend i{transition:width .35s ease,height .35s ease}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="co">AYO STRATEGIC CONSULTING GROUP, LLC</div>
+  <h1>Agency Finder</h1>
+  <p>Enter your NAICS code to see which federal agencies buy the most in it, how much goes to small businesses, and who is winning the work.</p>
+</header>
+<div class="stripe"></div>
+
+<main>
+  <section class="card">
+    <form id="f" autocomplete="off">
+      <div class="field">
+        <label for="q">NAICS code or keyword</label>
+        <input id="q" type="text" inputmode="text" placeholder="Example: 541611 or janitorial">
+      </div>
+      <div class="field fy">
+        <label for="fy">Fiscal year</label>
+        <select id="fy"></select>
+      </div>
+      <button class="go" type="submit">Find agencies</button>
+    </form>
+    <div id="sugg" hidden></div>
+    <p class="hint" id="msg" role="status" aria-live="polite"></p>
+  </section>
+
+  <div id="out" hidden>
+    <section class="card" style="margin-bottom:18px">
+      <div class="code" id="rCode"></div>
+      <div class="title" id="rTitle"></div>
+      <div class="stats" id="rStats"></div>
+      <div class="trend" id="rTrend" aria-label="Contract dollars by fiscal year"></div>
+    </section>
+
+    <section class="card" style="margin-bottom:18px">
+      <h2>Top buying agencies</h2>
+      <p class="lede">Ranked by contract dollars obligated in this code. Obligated means the agency committed the money on a contract during the fiscal year.</p>
+      <ol class="rank" id="rAg"></ol>
+    </section>
+
+    <section class="card" style="margin-bottom:18px">
+      <h2>Top buying offices inside those agencies</h2>
+      <p class="lede">The sub agency is usually who you market to. A department is too big to call.</p>
+      <ol class="rank" id="rSub"></ol>
+    </section>
+
+    <div class="two" style="margin-bottom:18px">
+      <section class="card">
+        <h2>Top small business winners</h2>
+        <p class="lede">Your likely competitors and teaming partners.</p>
+        <ol class="rank" id="rSB"></ol>
+      </section>
+      <section class="card">
+        <h2>Top winners overall</h2>
+        <p class="lede">The large primes. Many need small business subcontractors.</p>
+        <ol class="rank" id="rAll"></ol>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Next step</h2>
+      <p class="lede">See what is open for bid right now in this code, then check the spending detail behind these numbers.</p>
+      <div class="next" id="rNext"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <p>Source: USAspending.gov, pulled live each time you search. Figures are federal prime contract obligations (award types A, B, C and D) grouped by awarding agency. Department of Defense data posts about 90 days late, so the most recent months can be incomplete.</p>
+  <p>This tool is for market research and training. It does not predict future awards.</p>
+  <p>&copy; 2026 Ayo Strategic Consulting Group, LLC. All rights reserved.</p>
+</footer>
+
+<script>
+const API='https://api.usaspending.gov/api/v2';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const now=new Date();
+const LAST_FY=now.getMonth()>=9?now.getFullYear():now.getFullYear()-1;
+let seq=0,sugTimer=null,lastSugg=[];
+
+function money(n){
+  n=Number(n)||0;const a=Math.abs(n),s=n<0?'-':'';
+  if(a>=1e9)return s+'$'+(a/1e9).toFixed(2)+'B';
+  if(a>=1e6)return s+'$'+(a/1e6).toFixed(1)+'M';
+  if(a>=1e3)return s+'$'+Math.round(a/1e3)+'K';
+  return s+'$'+Math.round(a);
+}
+function pct(part,whole){if(!(whole>0)||!(part>0))return 0;return Math.min(100,Math.round(part/whole*100));}
+function title(s){return String(s||'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()).replace(/\b(Llc|Llp|Inc|Usa|Us)\b/g,m=>m.toUpperCase());}
+function filters(code,fyStart,fyEnd,sb){
+  const f={time_period:[{start_date:(fyStart-1)+'-10-01',end_date:fyEnd+'-09-30'}],award_type_codes:['A','B','C','D'],naics_codes:[code]};
+  if(sb)f.recipient_type_names=['small_business'];
+  return f;
+}
+async function post(path,body){
+  const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('USAspending answered with error '+r.status+'.');
+  return r.json();
+}
+const cat=(c,code,fy,sb,limit)=>post('/search/spending_by_category/'+c+'/',{filters:filters(code,fy,fy,sb),limit:limit,page:1}).then(j=>j.results||[]);
+const overTime=(code,sb)=>post('/search/spending_over_time/',{group:'fiscal_year',filters:filters(code,LAST_FY-5,LAST_FY,sb)}).then(j=>j.results||[]);
+function byYear(rows){const m={};rows.forEach(r=>{m[r.time_period.fiscal_year]=Number(r.aggregated_amount)||0;});return m;}
+
+function setMsg(t,err){const m=$('msg');m.textContent=t||'';m.className='hint'+(err?' err':'');}
+
+function rankList(el,rows,opt){
+  opt=opt||{};
+  rows=rows.filter(r=>Number(r.amount)>0);
+  if(!rows.length){el.innerHTML='<li><span></span><p class="empty">Nothing reported here for this year.</p><span></span></li>';return;}
+  const max=Math.max.apply(null,rows.map(r=>Number(r.amount)));
+  el.innerHTML=rows.map((r,i)=>{
+    const amt=Number(r.amount),w=Math.max(1.5,amt/max*100);
+    const name=opt.caps?title(r.name):r.name;
+    const link=opt.link?opt.link(r):null;
+    let h='<li><span class="rk">'+(i+1)+'</span><span class="nm">'+(link?'<a href="'+esc(link)+'" target="_blank" rel="noopener">'+esc(name)+'</a>':esc(name));
+    if(opt.sub&&opt.sub(r))h+='<small>'+esc(opt.sub(r))+'</small>';
+    h+='</span><span class="amt">'+money(amt)+'</span><span class="bar"><i style="width:'+w.toFixed(1)+'%"></i></span>';
+    if(opt.sbMap){
+      const sb=opt.sbMap[r.name]||0,p=pct(sb,amt);
+      h+='<span class="sbn">'+(sb>0?'<b>'+p+'% to small businesses</b> ('+money(sb)+')':'No small business dollars reported')+'</span>';
+    }
+    return h+'</li>';
+  }).join('');
+}
+
+async function run(code){
+  const my=++seq,fy=Number($('fy').value);
+  $('sugg').hidden=true;$('q').value=code;
+  setMsg('Pulling live numbers from USAspending for '+code+'...');
+  try{
+    const [ag,agSB,sub,subSB,recSB,recAll,tAll,tSB,ref]=await Promise.all([
+      cat('awarding_agency',code,fy,false,10),
+      cat('awarding_agency',code,fy,true,100),
+      cat('awarding_subagency',code,fy,false,10),
+      cat('awarding_subagency',code,fy,true,100),
+      cat('recipient',code,fy,true,5),
+      cat('recipient',code,fy,false,5),
+      overTime(code,false),
+      overTime(code,true),
+      fetch(API+'/references/naics/'+code+'/').then(r=>r.ok?r.json():null).catch(()=>null)
+    ]);
+    if(my!==seq)return;
+    const yAll=byYear(tAll),ySB=byYear(tSB),total=yAll[fy]||0,sbTotal=ySB[fy]||0;
+    const desc=ref&&ref.results&&ref.results[0]?ref.results[0].naics_description:'';
+    if(!ag.length&&!(total>0)){
+      $('out').hidden=true;
+      setMsg('No contract spending found under '+code+' in fiscal year '+fy+'. Check the code, try a keyword, or pick another year.',true);
+      return;
+    }
+    $('rCode').textContent='NAICS '+code+'  ·  FISCAL YEAR '+fy;
+    $('rTitle').textContent=desc||('All codes that begin with '+code);
+    $('rStats').innerHTML=
+      '<div class="stat"><div class="n">'+money(total)+'</div><div class="l">in federal contracts, all agencies</div></div>'+
+      '<div class="stat sb"><div class="n">'+money(sbTotal)+'</div><div class="l">went to small businesses ('+pct(sbTotal,total)+'%)</div></div>'+
+      '<div class="stat"><div class="n">'+esc(ag[0]?ag[0].name:'None')+'</div><div class="l">is the biggest buyer</div></div>';
+    const years=[];for(let y=LAST_FY-5;y<=LAST_FY;y++)years.push(y);
+    const tmax=Math.max.apply(null,years.map(y=>yAll[y]||0).concat([1]));
+    $('rTrend').innerHTML=years.map(y=>{const v=yAll[y]||0;
+      return '<div class="'+(y===fy?'on':'')+'"><span class="v">'+money(v)+'</span><i style="height:'+Math.max(1,v/tmax*100).toFixed(1)+'%"></i><span>FY'+String(y).slice(2)+'</span></div>';}).join('');
+    const mapOf=rows=>{const m={};rows.forEach(r=>{m[r.name]=Number(r.amount)||0;});return m;};
+    rankList($('rAg'),ag,{sbMap:mapOf(agSB),link:r=>r.agency_slug?'https://www.usaspending.gov/agency/'+r.agency_slug:null});
+    rankList($('rSub'),sub,{sbMap:mapOf(subSB),sub:r=>r.agency_name&&r.agency_name!==r.name?r.agency_name:''});
+    rankList($('rSB'),recSB,{caps:true});
+    rankList($('rAll'),recAll,{caps:true});
+    let next='';
+    if(/^\d{6}$/.test(code)){
+      const p='sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5B';
+      next+='<a class="primary" target="_blank" rel="noopener" href="https://sam.gov/search/?index=opp&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL&'+p+'key%5D='+code+'&'+p+'value%5D='+code+'">Open opportunities for '+code+' on SAM.gov</a>';
+    }else{
+      next+='<a class="primary" target="_blank" rel="noopener" href="https://sam.gov/search/?index=opp&sfm%5Bstatus%5D%5Bis_active%5D=true">Search open opportunities on SAM.gov</a>';
+    }
+    next+='<a target="_blank" rel="noopener" href="https://www.usaspending.gov/search">Dig deeper on USAspending.gov</a>';
+    $('rNext').innerHTML=next;
+    $('out').hidden=false;
+    setMsg('Showing fiscal year '+fy+' for NAICS '+code+'. Pulled live from USAspending just now.');
+    try{history.replaceState(null,'','#'+code);}catch(e){}
+  }catch(e){
+    if(my!==seq)return;
+    setMsg('Could not reach USAspending. Check your internet connection and try again. ('+(e&&e.message?e.message:e)+')',true);
+  }
+}
+
+function suggest(text){
+  clearTimeout(sugTimer);
+  if(text.length<2||/^\d{6}$/.test(text)){$('sugg').hidden=true;lastSugg=[];return;}
+  sugTimer=setTimeout(async()=>{
+    try{
+      const j=await post('/autocomplete/naics/',{search_text:text,limit:8});
+      if($('q').value.trim()!==text)return;
+      lastSugg=(j.results||[]).filter(r=>!r.year_retired);
+      $('sugg').innerHTML=lastSugg.map(r=>'<button type="button" data-c="'+esc(r.naics)+'"><b>'+esc(r.naics)+'</b>'+esc(r.naics_description)+'</button>').join('');
+      $('sugg').hidden=!lastSugg.length;
+    }catch(e){$('sugg').hidden=true;}
+  },250);
+}
+
+for(let y=LAST_FY;y>=LAST_FY-2;y--){const o=document.createElement('option');o.value=y;o.textContent='FY '+y;$('fy').appendChild(o);}
+$('q').addEventListener('input',e=>suggest(e.target.value.trim()));
+$('sugg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)run(b.dataset.c);});
+$('fy').addEventListener('change',()=>{const c=$('q').value.trim();if(/^\d{2,6}$/.test(c))run(c);});
+$('f').addEventListener('submit',e=>{
+  e.preventDefault();
+  const v=$('q').value.trim();
+  if(/^\d{2,6}$/.test(v))run(v);
+  else if(lastSugg.length)run(lastSugg[0].naics);
+  else setMsg('Type a NAICS code (2 to 6 digits) or a keyword, then pick one of the suggestions.',true);
+});
+const start=(location.hash.match(/\d{2,6}/)||[])[0];
+run(start||'541611');
+</script>
+</body>
+</html>

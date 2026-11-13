@@ -60,7 +60,7 @@ def main(src, out):
             if due and due < today:
                 continue
             nid = pick(row, idx, "NoticeId")
-            link = pick(row, idx, "Link") or ("https://sam.gov/opp/%s/view" % nid if nid else "")
+            link = ("https://sam.gov/opp/%s/view" % nid) if nid else pick(row, idx, "Link")
             by[naics].append({
                 "t": pick(row, idx, "Title")[:220],
                 "sol": pick(row, idx, "Sol#", "SolicitationNumber"),

@@ -86,7 +86,28 @@ ol.opps a.t:hover{text-decoration:underline}
 button.more{font:inherit;font-weight:600;margin-top:12px;padding:10px 16px;border-radius:8px;border:1.5px solid var(--teal-deep);background:#fff;color:var(--teal-deep);cursor:pointer}
 footer{max-width:920px;margin:0 auto;padding:0 16px 32px;font-size:12.5px;color:var(--muted)}
 footer p{margin:0 0 6px;max-width:80ch}
+button.sv{font:inherit;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:99px;border:1.5px solid var(--teal-deep);background:#fff;color:var(--teal-deep);cursor:pointer}
+button.sv.on{background:var(--teal-deep);color:#fff}
+.act{grid-column:2 / 4}
+ol.mine{list-style:none;margin:0 0 14px;padding:0}
+ol.mine li{padding:13px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+ol.mine .hd{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+ol.mine .hd b{overflow-wrap:anywhere}
+ol.mine .dt{font-size:13.5px;color:var(--muted)}
+textarea{font:inherit;color:var(--ink);width:100%;min-height:64px;padding:10px 12px;border:1.5px solid #b9c4ca;border-radius:8px;resize:vertical;background:#fff}
+#mNotes{min-height:110px}
+.pnote,.printhead{display:none}
+.next button{font:inherit;font-weight:600;padding:11px 16px;border-radius:8px;border:1.5px solid var(--teal-deep);color:var(--teal-deep);background:#fff;cursor:pointer}
+.next button.primary{background:var(--teal-deep);color:#fff}
+button.rm{font:inherit;font-size:12.5px;border:0;background:none;color:#9c3b3b;text-decoration:underline;cursor:pointer;padding:0;margin-left:auto}
 [hidden]{display:none!important}
+@media print{
+  .top p,main>section:first-child,#out,footer p:not(:last-child),.next,button.rm,textarea,.mlede,label[for=mNotes]{display:none!important}
+  body{background:#fff}.card{border:0;padding:0}
+  .printhead{display:block;font-size:13px;color:#333;margin-bottom:10px}
+  .pnote{display:block;white-space:pre-wrap;border-left:3px solid #999;padding-left:10px}
+  ol.mine li{break-inside:avoid}
+}
 @media (max-width:480px){.top h1{font-size:23px}.field.fy{flex:1 1 120px}button.go{flex:1 1 100%}.trend span.v{display:none}}
 @media (prefers-reduced-motion:no-preference){.bar i,.trend i{transition:width .35s ease,height .35s ease}}
 </style>
@@ -167,6 +188,22 @@ footer p{margin:0 0 6px;max-width:80ch}
       <div class="next" id="rNext"></div>
     </section>
   </div>
+
+  <section class="card" id="mine">
+    <h2>My target list</h2>
+    <div class="printhead" id="mPrintHead"></div>
+    <p class="lede mlede" id="mLede">Tap "Add to my list" on any agency, office, or opportunity. Add your own notes, then print it or copy it to take with you.</p>
+    <ol class="mine" id="mList"></ol>
+    <label for="mNotes">General notes</label>
+    <textarea id="mNotes" placeholder="Who to call, what to ask, what to do this week"></textarea>
+    <div class="pnote" id="mNotesP"></div>
+    <p class="hint" id="mStore"></p>
+    <div class="next">
+      <button class="primary" id="mPrint" type="button">Print or save as PDF</button>
+      <button id="mCopy" type="button">Copy my list</button>
+      <button id="mClear" type="button">Clear my list</button>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -184,6 +221,23 @@ const LAST_FY=now.getMonth()>=9?now.getFullYear():now.getFullYear()-1;
 const DATA='https://raw.githubusercontent.com/Ayo-SCG/agency-finder/data/opps/';
 let seq=0,sugTimer=null,lastSugg=[];
 let oppIndex=null,opps=[],oShown=25;
+let curCode='',curFy='',mine={items:[],notes:''},storeOK=true,clearArmed=false;
+const keyOf=(k,n)=>k+'|'+n+'|'+(k==='Opportunity'?'':curCode);
+function svBtn(kind,name,detail,link){const on=mine.items.some(i=>i.key===keyOf(kind,name));
+  return '<button type="button" class="sv'+(on?' on':'')+'" data-k="'+esc(kind)+'" data-n="'+esc(name)+'" data-d="'+esc(detail)+'" data-l="'+esc(link)+'">'+(on?'On my list':'Add to my list')+'</button>';}
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('ayo-agency-finder',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function dbGet(){const d=await idb();return new Promise((res,rej)=>{const q=d.transaction('kv').objectStore('kv').get('list');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
+async function dbSet(v){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,'list');t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
+function persist(){dbSet(mine).then(()=>{storeOK=true;},()=>{storeOK=false;}).then(storeNote);}
+function storeNote(){$('mStore').textContent=storeOK?'Your list is saved on this device and in this browser only. It will not appear on another phone or computer, so print or copy it before you leave.':'This browser is not saving data, so your list will clear when you close the page. Print or copy it before you leave.';}
+function renderMine(){
+  $('mList').innerHTML=mine.items.map((it,i)=>'<li><span class="hd"><span class="pill">'+esc(it.kind)+'</span><b>'+(it.link?'<a href="'+esc(it.link)+'" target="_blank" rel="noopener">'+esc(it.name)+'</a>':esc(it.name))+'</b><button type="button" class="rm" data-i="'+i+'">Remove</button></span>'+(it.detail?'<span class="dt">'+esc(it.detail)+'</span>':'')+'<textarea data-i="'+i+'" aria-label="Notes for '+esc(it.name)+'" placeholder="My notes">'+esc(it.note||'')+'</textarea><div class="pnote">'+esc(it.note||'')+'</div></li>').join('');
+  $('mLede').hidden=false;$('mNotesP').textContent=mine.notes||'';
+  const d=new Date();$('mPrintHead').textContent='Agency Finder target list. Prepared '+MON[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()+'.';
+}
+function listText(){let t='MY TARGET LIST (Agency Finder, Ayo Strategic Consulting Group, LLC)\n\n';
+  mine.items.forEach((it,i)=>{t+=(i+1)+'. '+it.kind+': '+it.name+'\n'+(it.detail?'   '+it.detail+'\n':'')+(it.link?'   '+it.link+'\n':'')+(it.note?'   Notes: '+it.note+'\n':'')+'\n';});
+  if(mine.notes)t+='General notes:\n'+mine.notes+'\n';return t;}
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function nice(d){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d||'');return m?MON[Number(m[2])-1]+' '+Number(m[3])+', '+m[1]:'';}
 function daysLeft(d){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d||'');if(!m)return null;const t=new Date();return Math.round((Date.UTC(m[1],m[2]-1,m[3])-Date.UTC(t.getFullYear(),t.getMonth(),t.getDate()))/864e5);}
@@ -201,6 +255,7 @@ function renderOpps(){
     if(o.sa)h+='<span class="pill sa">'+esc(o.sa)+'</span>';
     if(o.st)h+='<span class="pill">'+esc(o.st)+'</span>';
     h+=dl===null?'<span class="pill">No deadline listed</span>':'<span class="pill '+(dl<=7?'soon':'due')+'">Due '+nice(o.due)+' ('+(dl===0?'today':dl===1?'1 day left':dl+' days left')+')</span>';
+    h+=svBtn('Opportunity',o.t,[who,o.type,o.sa,dl===null?'':'Due '+nice(o.due)].filter(Boolean).join(', '),o.link);
     return h+'</span></li>';}).join('')||'<li><p class="empty">No open notices match these filters.</p></li>';
   $('oMore').hidden=rows.length<=oShown;
   $('oMore').textContent='Show more ('+Math.max(0,rows.length-oShown)+' left)';
@@ -265,12 +320,13 @@ function rankList(el,rows,opt){
       const sb=opt.sbMap[r.name]||0,p=pct(sb,amt);
       h+='<span class="sbn">'+(sb>0?'<b>'+p+'% to small businesses</b> ('+money(sb)+')':'No small business dollars reported')+'</span>';
     }
+    if(opt.kind)h+='<span class="act">'+svBtn(opt.kind,r.name,money(amt)+' in contracts under NAICS '+curCode+', fiscal year '+curFy+(opt.sbMap&&opt.sbMap[r.name]>0?', '+pct(opt.sbMap[r.name],amt)+'% to small businesses':''),link||'')+'</span>';
     return h+'</li>';
   }).join('');
 }
 
 async function run(code){
-  const my=++seq,fy=Number($('fy').value);
+  const my=++seq,fy=Number($('fy').value);curCode=code;curFy=fy;
   $('sugg').hidden=true;$('q').value=code;
   setMsg('Pulling live numbers from USAspending for '+code+'...');
   loadOpps(code,my);
@@ -305,8 +361,8 @@ async function run(code){
     $('rTrend').innerHTML=years.map(y=>{const v=yAll[y]||0;
       return '<div class="'+(y===fy?'on':'')+'"><span class="v">'+money(v)+'</span><i style="height:'+Math.max(1,v/tmax*100).toFixed(1)+'%"></i><span>FY'+String(y).slice(2)+'</span></div>';}).join('');
     const mapOf=rows=>{const m={};rows.forEach(r=>{m[r.name]=Number(r.amount)||0;});return m;};
-    rankList($('rAg'),ag,{sbMap:mapOf(agSB),link:r=>r.agency_slug?'https://www.usaspending.gov/agency/'+r.agency_slug:null});
-    rankList($('rSub'),sub,{sbMap:mapOf(subSB),sub:r=>r.agency_name&&r.agency_name!==r.name?r.agency_name:''});
+    rankList($('rAg'),ag,{kind:'Agency',sbMap:mapOf(agSB),link:r=>r.agency_slug?'https://www.usaspending.gov/agency/'+r.agency_slug:null});
+    rankList($('rSub'),sub,{kind:'Office',sbMap:mapOf(subSB),sub:r=>r.agency_name&&r.agency_name!==r.name?r.agency_name:''});
     rankList($('rSB'),recSB,{caps:true});
     rankList($('rAll'),recAll,{caps:true});
     let next='';
@@ -341,6 +397,24 @@ function suggest(text){
   },250);
 }
 
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.classList.contains('sv')){const key=keyOf(b.dataset.k,b.dataset.n),at=mine.items.findIndex(i=>i.key===key);
+    if(at>=0)mine.items.splice(at,1);else mine.items.push({key:key,kind:b.dataset.k,name:b.dataset.n,detail:b.dataset.d,link:b.dataset.l,note:''});
+    b.classList.toggle('on',at<0);b.textContent=at<0?'On my list':'Add to my list';renderMine();persist();}
+  else if(b.classList.contains('rm')){mine.items.splice(Number(b.dataset.i),1);renderMine();persist();document.querySelectorAll('button.sv.on').forEach(x=>{if(!mine.items.some(i=>i.key===keyOf(x.dataset.k,x.dataset.n))){x.classList.remove('on');x.textContent='Add to my list';}});}
+  else if(b.id==='mPrint'){try{window.print();}catch(err){}}
+  else if(b.id==='mCopy'){const done=ok=>{b.textContent=ok?'Copied':'Copy did not work. Use Print.';setTimeout(()=>{b.textContent='Copy my list';},2500);};
+    try{navigator.clipboard.writeText(listText()).then(()=>done(true),()=>done(false));}catch(err){done(false);}}
+  else if(b.id==='mClear'){if(!clearArmed){clearArmed=true;b.textContent='Tap again to clear everything';setTimeout(()=>{clearArmed=false;b.textContent='Clear my list';},4000);}
+    else{clearArmed=false;b.textContent='Clear my list';mine={items:[],notes:''};$('mNotes').value='';renderMine();persist();document.querySelectorAll('button.sv.on').forEach(x=>{x.classList.remove('on');x.textContent='Add to my list';});}}
+});
+document.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='mNotes'){mine.notes=t.value;$('mNotesP').textContent=t.value;persist();}
+  else if(t.tagName==='TEXTAREA'&&t.dataset.i!==undefined){const it=mine.items[Number(t.dataset.i)];if(it){it.note=t.value;t.nextElementSibling.textContent=t.value;persist();}}
+});
+renderMine();storeNote();
+const ready=dbGet().then(v=>{if(v&&v.items){mine=v;$('mNotes').value=mine.notes||'';renderMine();}},()=>{storeOK=false;storeNote();});
 for(let y=LAST_FY;y>=LAST_FY-2;y--){const o=document.createElement('option');o.value=y;o.textContent='FY '+y;$('fy').appendChild(o);}
 $('q').addEventListener('input',e=>suggest(e.target.value.trim()));
 $('sugg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)run(b.dataset.c);});
@@ -355,7 +429,7 @@ $('f').addEventListener('submit',e=>{
   else setMsg('Type a NAICS code (2 to 6 digits) or a keyword, then pick one of the suggestions.',true);
 });
 const start=(location.hash.match(/\d{2,6}/)||[])[0];
-run(start||'541611');
+ready.then(()=>run(start||'541611'));
 </script>
 </body>
 </html>

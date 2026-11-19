@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Agency Finder owner page</title>
+<style>
+:root{--teal:#5E8894;--teal-deep:#2E5560;--green:#60870C;--gold:#D4A017;--ink:#2B3A40;--muted:#5A6B72;--bg:#f5f7fa;--line:#e4e8ec;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color-scheme:light}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5}
+.top{background:var(--teal-deep);color:#fff;padding:16px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
+.top h1{margin:0;font-size:22px}.top a{color:#fff}
+.stripe{height:6px;background:linear-gradient(90deg,var(--teal) 0 34%,var(--green) 34% 67%,var(--gold) 67% 100%)}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;overflow-x:auto}
+h2{font-size:18px;margin:0 0 4px;color:var(--teal-deep)}
+.lede{margin:0 0 12px;color:var(--muted);font-size:14px;max-width:75ch}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{border-left:4px solid var(--teal);padding:4px 0 4px 12px}
+.stat .n{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat .l{font-size:13px;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{background:var(--teal);color:#fff;text-align:left;padding:8px 10px;font-weight:600;white-space:nowrap}
+td{padding:8px 10px;border:1px solid var(--line);vertical-align:top}
+tr:nth-child(even) td{background:var(--bg)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px}
+label{font-size:13px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:4px;flex:1 1 150px}
+input{font:inherit;padding:9px 10px;border:1.5px solid #b9c4ca;border-radius:8px;width:100%}
+button{font:inherit;font-weight:600;padding:9px 14px;border-radius:8px;border:1.5px solid var(--teal-deep);background:#fff;color:var(--teal-deep);cursor:pointer}
+button.go{background:var(--teal-deep);color:#fff}
+td button{font-size:12.5px;padding:3px 9px;margin:0 4px 4px 0}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.msg{font-weight:600;margin:0 0 10px;min-height:1.4em}
+.off{color:#9c3b3b;font-weight:600}
+code{font-size:14px;font-weight:700;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<header class="top"><h1>Agency Finder owner page</h1><a href="/">Back to the tool</a></header>
+<div class="stripe"></div>
+<main>
+  <section class="card">
+    <h2>Usage</h2>
+    <p class="lede">A search is one NAICS lookup. A contract search is one run of the contracts ending soon step. Prints include copies of the target list.</p>
+    <div class="stats" id="stats"></div>
+  </section>
+  <section class="card">
+    <h2>Access codes</h2>
+    <p class="lede">Make one code for each session you sell. Give the code, or the sign up link next to it, to ticket buyers. Each buyer creates their own account with it.</p>
+    <form id="fCode">
+      <label>What it is for<input id="cLabel" placeholder="Capture Planning, January 2027" required></label>
+      <label>How many accounts<input id="cMax" type="number" min="1" max="5000" value="50"></label>
+      <label>Days of access<input id="cDays" type="number" min="1" max="3660" value="365"></label>
+      <label>Your own code (optional)<input id="cCode" placeholder="Leave blank to generate"></label>
+      <button class="go" type="submit">Create code</button>
+    </form>
+    <p class="msg" id="cMsg" role="status" aria-live="polite"></p>
+    <table><thead><tr><th>Code</th><th>For</th><th>Used</th><th>Days of access</th><th>Sign up link</th><th>Status</th></tr></thead><tbody id="codes"></tbody></table>
+  </section>
+  <section class="card">
+    <h2>People</h2>
+    <p class="lede">Most recently active first. People who came back on more than one day are the ones worth a follow up call.</p>
+    <p class="msg" id="uMsg" role="status" aria-live="polite"></p>
+    <table><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Code</th><th>Last seen</th><th>Days active</th><th>Searches</th><th>Contract searches</th><th>Prints</th><th>Access until</th><th>Actions</th></tr></thead><tbody id="users"></tbody></table>
+  </section>
+  <section class="card">
+    <h2>Last 30 days</h2>
+    <table><thead><tr><th>Day</th><th>People active</th><th>Searches</th></tr></thead><tbody id="daily"></tbody></table>
+  </section>
+  <section class="card">
+    <h2>NAICS codes searched most, last 90 days</h2>
+    <table><thead><tr><th>NAICS code</th><th>Searches</th></tr></thead><tbody id="naics"></tbody></table>
+  </section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const day=d=>d?new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+async function api(path,body){const r=await fetch(path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined);
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'That did not work.');return j;}
+async function load(){
+  const d=await api('/api/admin/summary'),t=d.totals;
+  $('stats').innerHTML=[[t.users,'accounts'],[t.active7,'people active, last 7 days'],[t.active30,'people active, last 30 days'],[t.searches30,'searches, last 30 days'],[t.contracts30,'contract searches, last 30 days'],[t.prints30,'lists printed or copied, last 30 days']]
+    .map(x=>'<div class="stat"><div class="n">'+x[0]+'</div><div class="l">'+x[1]+'</div></div>').join('');
+  $('codes').innerHTML=d.codes.map(c=>'<tr><td><code>'+esc(c.code)+'</code></td><td>'+esc(c.label)+'</td><td class="num">'+c.uses+' of '+c.max_uses+'</td><td class="num">'+c.access_days+'</td><td>'+esc(location.origin+'/signin?code='+c.code)+'</td><td>'+(c.active?'On':'<span class="off">Off</span>')+' <button data-code="'+esc(c.code)+'">'+(c.active?'Turn off':'Turn on')+'</button></td></tr>').join('')||'<tr><td colspan="6">No codes yet. Create one above.</td></tr>';
+  $('users').innerHTML=d.users.map(u=>'<tr><td>'+esc(u.name)+(u.is_admin?' (owner)':'')+'</td><td>'+esc(u.company)+'</td><td>'+esc(u.email)+'</td><td>'+esc(u.code_used||'')+'</td><td>'+(day(u.last_seen)||'Never')+'</td><td class="num">'+u.days_active+'</td><td class="num">'+u.searches+'</td><td class="num">'+u.contracts+'</td><td class="num">'+u.prints+'</td><td>'+(u.is_admin?'No end':day(u.access_until))+(u.disabled?' <span class="off">Off</span>':'')+'</td><td>'+(u.is_admin?'':'<button data-u="'+u.id+'" data-a="reset">Reset password</button><button data-u="'+u.id+'" data-a="extend">Add 1 year</button><button data-u="'+u.id+'" data-a="toggle">'+(u.disabled?'Turn on':'Turn off')+'</button>')+'</td></tr>').join('');
+  $('daily').innerHTML=d.daily.map(r=>'<tr><td>'+day(r.day)+'</td><td class="num">'+r.people+'</td><td class="num">'+r.searches+'</td></tr>').join('')||'<tr><td colspan="3">No activity yet.</td></tr>';
+  $('naics').innerHTML=d.naics.map(r=>'<tr><td>'+esc(r.code)+'</td><td class="num">'+r.n+'</td></tr>').join('')||'<tr><td colspan="2">No searches yet.</td></tr>';
+}
+$('fCode').addEventListener('submit',async e=>{e.preventDefault();
+  try{const j=await api('/api/admin/codes',{label:$('cLabel').value,maxUses:$('cMax').value,accessDays:$('cDays').value,code:$('cCode').value});
+    $('cMsg').textContent='Created code '+j.code+'.';$('cLabel').value='';$('cCode').value='';load();}catch(err){$('cMsg').textContent=err.message;}});
+document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
+  try{
+    if(b.dataset.code){await api('/api/admin/codes/'+encodeURIComponent(b.dataset.code)+'/toggle',{});load();}
+    else if(b.dataset.u){const a=b.dataset.a;
+      if(a==='reset'){const j=await api('/api/admin/users/'+b.dataset.u+'/reset',{});$('uMsg').textContent='Temporary password: '+j.tempPassword+'   Send it to them now. It will not be shown again.';}
+      else{await api('/api/admin/users/'+b.dataset.u+'/'+a,a==='extend'?{days:365}:{});$('uMsg').textContent='Done.';load();}}
+  }catch(err){$('uMsg').textContent=err.message;}});
+load().catch(err=>{$('uMsg').textContent=err.message;});
+</script>
+</body>
+</html>

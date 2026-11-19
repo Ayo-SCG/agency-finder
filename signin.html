@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sign in to Agency Finder</title>
+<style>
+:root{--teal:#5E8894;--teal-deep:#2E5560;--green:#60870C;--gold:#D4A017;--ink:#2B3A40;--muted:#5A6B72;--bg:#f5f7fa;--line:#e4e8ec;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color-scheme:light}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5}
+.top{background:var(--teal-deep);color:#fff;padding:18px 20px 16px}
+.top .co{font-size:12px;letter-spacing:.14em;font-weight:600;opacity:.9}
+.top h1{margin:4px 0 2px;font-size:28px;line-height:1.15}
+.top p{margin:0;font-size:15px;opacity:.92;max-width:60ch}
+.stripe{height:6px;background:linear-gradient(90deg,var(--teal) 0 34%,var(--green) 34% 67%,var(--gold) 67% 100%)}
+main{max-width:460px;margin:0 auto;padding:24px 16px 40px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tabs button{flex:1;font:inherit;font-weight:600;padding:10px;border-radius:8px;border:1.5px solid var(--teal-deep);background:#fff;color:var(--teal-deep);cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--teal-deep);color:#fff}
+form{display:flex;flex-direction:column;gap:12px}
+label{font-size:13px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+input{font:inherit;color:var(--ink);padding:11px 12px;border:1.5px solid #b9c4ca;border-radius:8px;width:100%}
+button.go{font:inherit;font-weight:600;color:#fff;background:var(--teal-deep);border:0;border-radius:8px;padding:12px 22px;cursor:pointer}
+button.go:disabled{opacity:.6}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.msg{margin:0;font-size:14px;font-weight:500;min-height:1.4em}
+.msg.err{color:#9c3b3b}
+.hint{font-size:13px;color:var(--muted);margin:14px 0 0}
+footer{max-width:460px;margin:0 auto;padding:0 16px 32px;font-size:12.5px;color:var(--muted)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="co">AYO STRATEGIC CONSULTING GROUP, LLC</div>
+  <h1>Agency Finder</h1>
+  <p>Find the federal agencies that buy what you sell, the contracts coming up for renewal, and the open opportunities in your code.</p>
+</header>
+<div class="stripe"></div>
+<main>
+  <div class="card">
+    <div class="tabs" role="tablist">
+      <button type="button" id="tIn" role="tab" aria-selected="true">Sign in</button>
+      <button type="button" id="tUp" role="tab" aria-selected="false">Create my account</button>
+    </div>
+    <form id="fIn">
+      <label>Email<input id="inEmail" type="email" autocomplete="username" required></label>
+      <label>Password<input id="inPw" type="password" autocomplete="current-password" required></label>
+      <button class="go" type="submit">Sign in</button>
+    </form>
+    <form id="fUp" hidden>
+      <label>Access code<input id="upCode" type="text" autocomplete="off" autocapitalize="characters" required></label>
+      <label>Your name<input id="upName" type="text" autocomplete="name" required></label>
+      <label>Company<input id="upCo" type="text" autocomplete="organization"></label>
+      <label>Email<input id="upEmail" type="email" autocomplete="username" required></label>
+      <label>Choose a password (10 characters or more)<input id="upPw" type="password" autocomplete="new-password" minlength="10" required></label>
+      <button class="go" type="submit">Create my account</button>
+    </form>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <p class="hint" id="hint">Forgot your password? Email Ayo Strategic Consulting Group, LLC and we will reset it for you.</p>
+  </div>
+</main>
+<footer><p>&copy; 2026 Ayo Strategic Consulting Group, LLC. All rights reserved.</p></footer>
+<script>
+const $=id=>document.getElementById(id);
+function tab(up){$('fIn').hidden=up;$('fUp').hidden=!up;$('tIn').setAttribute('aria-selected',String(!up));$('tUp').setAttribute('aria-selected',String(up));
+  $('hint').textContent=up?'Your access code came with your session ticket. Each code works for a set number of accounts.':'Forgot your password? Email Ayo Strategic Consulting Group, LLC and we will reset it for you.';say('');}
+function say(t,err){$('msg').textContent=t;$('msg').className='msg'+(err?' err':'');}
+$('tIn').onclick=()=>tab(false);$('tUp').onclick=()=>tab(true);
+async function send(path,body,form){
+  const b=form.querySelector('button.go');b.disabled=true;say('One moment...');
+  try{
+    const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok){location.href='/';return;}
+    say(j.error||'That did not work. Try again.',true);
+  }catch(e){say('Could not reach the Agency Finder. Check your internet connection and try again.',true);}
+  b.disabled=false;
+}
+$('fIn').addEventListener('submit',e=>{e.preventDefault();send('/api/signin',{email:$('inEmail').value,password:$('inPw').value},e.target);});
+$('fUp').addEventListener('submit',e=>{e.preventDefault();send('/api/signup',{code:$('upCode').value,name:$('upName').value,company:$('upCo').value,email:$('upEmail').value,password:$('upPw').value},e.target);});
+const p=new URLSearchParams(location.search);
+if(p.get('code')){tab(true);$('upCode').value=p.get('code');}
+if(p.get('ended'))say('Your access period has ended. Contact Ayo Strategic Consulting Group, LLC to renew.',true);
+</script>
+</body>
+</html>

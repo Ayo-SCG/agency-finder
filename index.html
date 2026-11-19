@@ -100,9 +100,28 @@ textarea{font:inherit;color:var(--ink);width:100%;min-height:64px;padding:10px 1
 .next button{font:inherit;font-weight:600;padding:11px 16px;border-radius:8px;border:1.5px solid var(--teal-deep);color:var(--teal-deep);background:#fff;cursor:pointer}
 .next button.primary{background:var(--teal-deep);color:#fff}
 button.rm{font:inherit;font-size:12.5px;border:0;background:none;color:#9c3b3b;text-decoration:underline;cursor:pointer;padding:0;margin-left:auto}
+.acct{font-size:13px;margin-top:8px;opacity:.95}
+.acct a,.acct button{color:#fff;font:inherit;background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+nav.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:18px}
+nav.steps a{display:flex;gap:10px;align-items:center;text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-weight:600;font-size:14px;line-height:1.25;color:var(--ink)}
+nav.steps a:hover{border-color:var(--teal)}
+nav.steps b{flex:0 0 26px;height:26px;border-radius:50%;background:var(--teal-deep);color:#fff;display:grid;place-items:center;font-size:13px}
+.stepno{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--green);margin-bottom:2px}
+.picks{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.picks label{display:flex;gap:7px;align-items:center;font-size:13.5px;font-weight:500;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:6px 12px;cursor:pointer}
+.picks label.mine{border-color:var(--teal-deep)}
+.picks input{width:auto;margin:0;padding:0}
+.picks small{color:var(--muted)}
+.chk{display:flex;gap:8px;align-items:center;font-size:13.5px;font-weight:500;color:var(--ink);margin:10px 0 0}
+.chk input{width:auto}
+.desc{font-size:13.5px;color:var(--ink);overflow-wrap:anywhere}
+.links{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13.5px;font-weight:600}
+.pill.opt{background:#e9f0f2;border-color:#bfd0d6;color:#234650}
+.nextstep{display:flex;justify-content:flex-end;margin-top:14px}
+.nextstep a{text-decoration:none;font-weight:600;padding:10px 16px;border-radius:8px;background:var(--teal-deep);color:#fff}
 [hidden]{display:none!important}
 @media print{
-  .top p,main>section:first-child,#out,footer p:not(:last-child),.next,button.rm,textarea,.mlede,label[for=mNotes]{display:none!important}
+  .top p,.acct,main>section:first-child,#out,footer p:not(:last-child),.next,button.rm,textarea,.mlede,label[for=mNotes]{display:none!important}
   body{background:#fff}.card{border:0;padding:0}
   .printhead{display:block;font-size:13px;color:#333;margin-bottom:10px}
   .pnote{display:block;white-space:pre-wrap;border-left:3px solid #999;padding-left:10px}
@@ -116,7 +135,8 @@ button.rm{font:inherit;font-size:12.5px;border:0;background:none;color:#9c3b3b;t
 <header class="top">
   <div class="co">AYO STRATEGIC CONSULTING GROUP, LLC</div>
   <h1>Agency Finder</h1>
-  <p>Enter your NAICS code to see which federal agencies buy the most in it, how much goes to small businesses, and who is winning the work.</p>
+  <p>Enter your NAICS code to see which federal agencies buy the most in it, how much goes to small businesses, who is winning the work, and which contracts are coming up for renewal.</p>
+  <div class="acct" id="acct" hidden></div>
 </header>
 <div class="stripe"></div>
 
@@ -138,6 +158,12 @@ button.rm{font:inherit;font-size:12.5px;border:0;background:none;color:#9c3b3b;t
   </section>
 
   <div id="out" hidden>
+    <nav class="steps" aria-label="Steps">
+      <a href="#s1"><b>1</b>Find your agencies</a>
+      <a href="#s2"><b>2</b>See what is open now</a>
+      <a href="#s3"><b>3</b>Find contracts ending soon</a>
+      <a href="#mine"><b>4</b>Build your target list</a>
+    </nav>
     <section class="card" style="margin-bottom:18px">
       <div class="code" id="rCode"></div>
       <div class="title" id="rTitle"></div>
@@ -145,7 +171,8 @@ button.rm{font:inherit;font-size:12.5px;border:0;background:none;color:#9c3b3b;t
       <div class="trend" id="rTrend" aria-label="Contract dollars by fiscal year"></div>
     </section>
 
-    <section class="card" style="margin-bottom:18px">
+    <section class="card" id="s1" style="margin-bottom:18px">
+      <div class="stepno">STEP 1</div>
       <h2>Top buying agencies</h2>
       <p class="lede">Ranked by contract dollars obligated in this code. Obligated means the agency committed the money on a contract during the fiscal year.</p>
       <ol class="rank" id="rAg"></ol>
@@ -170,7 +197,8 @@ button.rm{font:inherit;font-size:12.5px;border:0;background:none;color:#9c3b3b;t
       </section>
     </div>
 
-    <section class="card" style="margin-bottom:18px">
+    <section class="card" id="s2" style="margin-bottom:18px">
+      <div class="stepno">STEP 2</div>
       <h2>Open opportunities right now</h2>
       <p class="lede" id="oMeta">Loading open opportunities...</p>
       <div class="filters" id="oFilters" hidden>
@@ -180,6 +208,25 @@ button.rm{font:inherit;font-size:12.5px;border:0;background:none;color:#9c3b3b;t
       </div>
       <ol class="opps" id="oList"></ol>
       <button class="more" id="oMore" type="button" hidden>Show more</button>
+      <div class="nextstep"><a href="#s3">Next step: contracts ending soon</a></div>
+    </section>
+
+    <section class="card" id="s3" style="margin-bottom:18px">
+      <div class="stepno">STEP 3</div>
+      <h2>Contracts ending soon at your target agencies</h2>
+      <p class="lede">Work that is already under contract in your code and is coming to an end. These are the contracts most likely to be competed again, so this is where you start building relationships before the next solicitation is written.</p>
+      <label>Agencies and offices to search</label>
+      <div class="picks" id="cxAg"></div>
+      <div class="filters">
+        <div class="field"><label for="cxWin">Ends within</label><select id="cxWin"><option value="12">12 months</option><option value="18">18 months</option><option value="24">2 years</option><option value="36" selected>3 years</option></select></div>
+        <div class="field"><label for="cxMin">Contract size</label><select id="cxMin"><option value="0">Any size</option><option value="250000">$250,000 or more</option><option value="1000000">$1 million or more</option><option value="5000000">$5 million or more</option></select></div>
+        <div class="field" style="flex:0 0 auto;justify-content:flex-end"><button class="go" id="cxGo" type="button">Find contracts</button></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="cxOpt"> Also show contracts whose option years run past my window</label>
+      <p class="hint" id="cxMeta" role="status" aria-live="polite">Pick your agencies, then choose Find contracts.</p>
+      <ol class="opps" id="cxList"></ol>
+      <button class="more" id="cxMore" type="button" hidden>Check more contracts</button>
+      <div class="nextstep"><a href="#mine">Next step: build your target list</a></div>
     </section>
 
     <section class="card">
@@ -190,9 +237,10 @@ button.rm{font:inherit;font-size:12.5px;border:0;background:none;color:#9c3b3b;t
   </div>
 
   <section class="card" id="mine">
+    <div class="stepno">STEP 4</div>
     <h2>My target list</h2>
     <div class="printhead" id="mPrintHead"></div>
-    <p class="lede mlede" id="mLede">Tap "Add to my list" on any agency, office, or opportunity. Add your own notes, then print it or copy it to take with you.</p>
+    <p class="lede mlede" id="mLede">Tap "Add to my list" on any agency, office, opportunity, or contract. Add your own notes, then print it or copy it to take with you.</p>
     <ol class="mine" id="mList"></ol>
     <label for="mNotes">General notes</label>
     <textarea id="mNotes" placeholder="Who to call, what to ask, what to do this week"></textarea>
@@ -207,18 +255,18 @@ button.rm{font:inherit;font-size:12.5px;border:0;background:none;color:#9c3b3b;t
 </main>
 
 <footer>
-  <p>Sources: USAspending.gov, pulled live each time you search, and the public SAM.gov Contract Opportunities file, refreshed every night. Figures are federal prime contract obligations (award types A, B, C and D) grouped by awarding agency. Department of Defense data posts about 90 days late, so the most recent months can be incomplete.</p>
+  <p>Sources: USAspending.gov, pulled live when you search, and the public SAM.gov Contract Opportunities file, refreshed every night. Contract end dates come from what agencies report to USAspending. The date with all options is the latest the contract can run if the agency uses every option; agencies can end a contract sooner or extend it. Figures are federal prime contract obligations (award types A, B, C and D) grouped by awarding agency. Department of Defense data posts about 90 days late, so the most recent months can be incomplete.</p>
   <p>This tool is for market research and training. It does not predict future awards.</p>
   <p>&copy; 2026 Ayo Strategic Consulting Group, LLC. All rights reserved.</p>
 </footer>
 
 <script>
-const API='https://api.usaspending.gov/api/v2';
+let API='https://api.usaspending.gov/api/v2',SERVER=false,ME=null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=new Date();
 const LAST_FY=now.getMonth()>=9?now.getFullYear():now.getFullYear()-1;
-const DATA='https://raw.githubusercontent.com/Ayo-SCG/agency-finder/data/opps/';
+let DATA='https://raw.githubusercontent.com/Ayo-SCG/agency-finder/data/opps/';
 let seq=0,sugTimer=null,lastSugg=[];
 let oppIndex=null,opps=[],oShown=25;
 let curCode='',curFy='',mine={items:[],notes:''},storeOK=true,clearArmed=false;
@@ -228,8 +276,14 @@ function svBtn(kind,name,detail,link){const on=mine.items.some(i=>i.key===keyOf(
 function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('ayo-agency-finder',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
 async function dbGet(){const d=await idb();return new Promise((res,rej)=>{const q=d.transaction('kv').objectStore('kv').get('list');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
 async function dbSet(v){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,'list');t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
-function persist(){dbSet(mine).then(()=>{storeOK=true;},()=>{storeOK=false;}).then(storeNote);}
-function storeNote(){$('mStore').textContent=storeOK?'Your list is saved on this device and in this browser only. It will not appear on another phone or computer, so print or copy it before you leave.':'This browser is not saving data, so your list will clear when you close the page. Print or copy it before you leave.';}
+let saveTimer=null;
+function saveRemote(){return fetch('/api/list',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(mine)}).then(r=>{if(!r.ok)throw new Error('save');});}
+function persist(){
+  if(SERVER){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveRemote().then(()=>{storeOK=true;},()=>{storeOK=false;}).then(storeNote);},700);dbSet(mine).catch(()=>{});return;}
+  dbSet(mine).then(()=>{storeOK=true;},()=>{storeOK=false;}).then(storeNote);}
+function track(type,detail){if(SERVER)fetch('/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:type,detail:detail||''}),keepalive:true}).catch(()=>{});}
+function storeNote(){if(SERVER){$('mStore').textContent=storeOK?'Your list is saved to your account. It will be here when you sign in on any phone or computer.':'Your list could not be saved just now. Check your internet connection. Print or copy it before you leave.';return;}
+  $('mStore').textContent=storeOK?'Your list is saved on this device and in this browser only. It will not appear on another phone or computer, so print or copy it before you leave.':'This browser is not saving data, so your list will clear when you close the page. Print or copy it before you leave.';}
 function renderMine(){
   $('mList').innerHTML=mine.items.map((it,i)=>'<li><span class="hd"><span class="pill">'+esc(it.kind)+'</span><b>'+(it.link?'<a href="'+esc(it.link)+'" target="_blank" rel="noopener">'+esc(it.name)+'</a>':esc(it.name))+'</b><button type="button" class="rm" data-i="'+i+'">Remove</button></span>'+(it.detail?'<span class="dt">'+esc(it.detail)+'</span>':'')+'<textarea data-i="'+i+'" aria-label="Notes for '+esc(it.name)+'" placeholder="My notes">'+esc(it.note||'')+'</textarea><div class="pnote">'+esc(it.note||'')+'</div></li>').join('');
   $('mLede').hidden=false;$('mNotesP').textContent=mine.notes||'';
@@ -295,8 +349,102 @@ function filters(code,fyStart,fyEnd,sb){
 }
 async function post(path,body){
   const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.status===401&&SERVER){location.href='/signin';throw new Error('Please sign in again.');}
   if(!r.ok)throw new Error('USAspending answered with error '+r.status+'.');
   return r.json();
+}
+async function getJSON(path){const r=await fetch(API+path);if(!r.ok)throw new Error('USAspending answered with error '+r.status+'.');return r.json();}
+
+/* Step 3: contracts ending soon */
+let topAg=[],topSub=[],cxRows=[],cxDone=0,cxSeq=0,cxCut='',cxBusy=false;
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function cxChoices(){
+  const prev={};document.querySelectorAll('#cxAg input').forEach(i=>{prev[i.dataset.t+'|'+i.dataset.n]=i.checked?(i.dataset.auto?'auto':true):false;});
+  const seen={},list=[];
+  const add=(tier,name,on,sub)=>{const k=tier+'|'+name;if(!name||seen[k])return;seen[k]=1;list.push({tier:tier,name:name,on:on,sub:sub||'',k:k});};
+  mine.items.forEach(it=>{if(it.key&&it.key.split('|').pop()===curCode){if(it.kind==='Agency')add('toptier',it.name,true);else if(it.kind==='Office')add('subtier',it.name,true);}});
+  const anyMine=list.length>0;
+  topSub.forEach(r=>add('subtier',r.name,false,r.agency_name&&r.agency_name!==r.name?r.agency_name:''));
+  topAg.forEach(r=>add('toptier',r.name,false));
+  const hadPrev=Object.keys(prev).length>0;
+  $('cxAg').innerHTML=list.map((c,i)=>{const auto=!anyMine&&(hadPrev?prev[c.k]==='auto':i===0),on=c.on||prev[c.k]===true||auto;
+    return '<label class="'+(c.on?'mine':'')+'"><input type="checkbox" data-t="'+c.tier+'" data-n="'+esc(c.name)+'"'+(auto&&!c.on?' data-auto="1"':'')+(on?' checked':'')+'>'+esc(c.name)+(c.on?' <small>on my list</small>':c.tier==='toptier'?' <small>whole agency</small>':'')+'</label>';}).join('')||'<p class="empty">Search a NAICS code first.</p>';
+}
+function cxReset(){cxSeq++;cxRows=[];cxDone=0;$('cxList').innerHTML='';$('cxMore').hidden=true;$('cxMeta').textContent='Pick your agencies, then choose Find contracts.';}
+function cxRow(x){
+  const d=x.d||{},pp=d.period_of_performance||{},c=d.latest_transaction_contract_data||{};
+  const end=x['End Date'],pot=String(pp.potential_end_date||end).slice(0,10),more=pot>end;
+  const who=[x['Awarding Sub Agency'],(d.awarding_agency||{}).office_agency_name].filter(Boolean).map(title).join('  ·  ');
+  const ceil=Number(d.base_and_all_options)||0,amt=Number(x['Award Amount'])||0;
+  const sa=c.type_set_aside_description&&!/^no set aside/i.test(c.type_set_aside_description)?title(c.type_set_aside_description):'';
+  const offers=Number(c.number_of_offers_received)||0,sol=(c.solicitation_identifier||'').trim();
+  const link='https://www.usaspending.gov/award/'+encodeURIComponent(x.generated_internal_id);
+  const name=title(x['Recipient Name'])+', contract '+x['Award ID'];
+  const desc=String(d.description||'').trim();
+  let h='<li><a class="t" href="'+esc(link)+'" target="_blank" rel="noopener">'+esc(name)+'</a>';
+  if(who)h+='<span class="who">'+esc(who)+'</span>';
+  if(desc)h+='<span class="desc">'+esc(desc.length>240?desc.slice(0,240)+'...':desc)+'</span>';
+  h+='<span class="pills"><span class="pill '+(daysLeft(end)<=180?'soon':'due')+'">Current period ends '+nice(end)+'</span>';
+  h+=more?'<span class="pill opt">With all options: '+nice(pot)+'</span>':'<span class="pill opt">No option years left</span>';
+  h+='<span class="pill">'+money(amt)+' so far'+(ceil>amt&&money(ceil)!==money(amt)?', up to '+money(ceil):'')+'</span>';
+  if(sa)h+='<span class="pill sa">'+esc(sa)+'</span>';
+  if(offers)h+='<span class="pill">'+offers+(offers===1?' offer':' offers')+' received</span>';
+  h+='</span><span class="links">';
+  if(sol){const k='sfm%5BsimpleSearch%5D%5BkeywordTags%5D%5B0%5D%5B';
+    h+='<a class="solx" data-s="'+esc(sol)+'" target="_blank" rel="noopener" href="https://sam.gov/search/?index=opp&page=1&pageSize=25&sort=-modifiedDate&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL&'+k+'key%5D='+encodeURIComponent(sol)+'&'+k+'value%5D='+encodeURIComponent(sol)+'&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5Bstatus%5D%5Bis_inactive%5D=true">Find the last solicitation on SAM.gov ('+esc(sol)+')</a>';}
+  else h+='<span class="who">No solicitation number was reported for this contract.</span>';
+  h+=svBtn('Contract',name,[who,'Current period ends '+nice(end),more?'with all options '+nice(pot):'no option years left',money(amt)+' so far',sa,sol?'Last solicitation '+sol:''].filter(Boolean).join(', '),link);
+  return h+'</span></li>';
+}
+function cxRender(){
+  const all=$('cxOpt').checked,ready=cxRows.slice(0,cxDone).filter(x=>x.d);
+  const show=ready.filter(x=>all||String((x.d.period_of_performance||{}).potential_end_date||x['End Date']).slice(0,10)<=cxCut);
+  $('cxList').innerHTML=show.map(cxRow).join('');
+  const left=cxRows.length-cxDone;
+  $('cxMore').hidden=left<=0;$('cxMore').textContent='Check more contracts ('+left+' left)';
+  $('cxMeta').textContent=cxRows.length?(show.length+' of the '+cxDone+' contracts checked so far end for good by '+nice(cxCut)+(all?', including those with later option years':'')+'. Soonest first.'+(ready.length-show.length>0&&!all?' '+(ready.length-show.length)+' more have option years that run past your window.':'')+(left>0?' '+left+' still to check.':'')):'No contracts in this code at these agencies have a current end date in your window. Try a longer window, more agencies, or any size.';
+  return show.length;
+}
+async function cxMoreRows(my){
+  if(cxBusy)return;cxBusy=true;$('cxMore').disabled=true;
+  try{
+    for(let round=0;round<4&&cxDone<cxRows.length;round++){
+      const batch=cxRows.slice(cxDone,cxDone+30);let i=0;
+      $('cxMeta').textContent='Checking option years and solicitation numbers on '+batch.length+' contracts...';
+      await Promise.all([0,1,2,3,4,5].map(async()=>{while(i<batch.length){const x=batch[i++];try{x.d=await getJSON('/awards/'+encodeURIComponent(x.generated_internal_id)+'/');}catch(e){x.d={};}}}));
+      if(my!==cxSeq)return;
+      const before=$('cxList').children.length;cxDone+=batch.length;
+      if(cxRender()-before>=10)break;
+    }
+  }finally{cxBusy=false;$('cxMore').disabled=false;if(my===cxSeq)cxRender();}
+}
+async function findContracts(){
+  const picks=[].slice.call(document.querySelectorAll('#cxAg input:checked')).map(i=>({type:'awarding',tier:i.dataset.t,name:i.dataset.n}));
+  if(!curCode){$('cxMeta').textContent='Search a NAICS code first.';return;}
+  if(!picks.length){$('cxMeta').textContent='Pick at least one agency or office to search.';return;}
+  cxReset();const my=cxSeq,t=new Date(),today=iso(t);
+  const cut=new Date(t);cut.setMonth(cut.getMonth()+Number($('cxWin').value));cxCut=iso(cut);
+  const st=new Date(t);st.setFullYear(st.getFullYear()-8);
+  const f={award_type_codes:['A','B','C','D'],naics_codes:[curCode],agencies:picks,time_period:[{start_date:iso(st),end_date:today}]};
+  const min=Number($('cxMin').value);if(min)f.award_amounts=[{lower_bound:min}];
+  const page=p=>post('/search/spending_by_award/',{filters:f,fields:['Award ID','Recipient Name','Start Date','End Date','Award Amount','Awarding Agency','Awarding Sub Agency','generated_internal_id'],sort:'End Date',order:'asc',limit:100,page:p}).then(j=>j.results||[]);
+  $('cxGo').disabled=true;$('cxMeta').textContent='Looking through contract records on USAspending...';
+  try{
+    const total=((await post('/search/spending_by_award_count/',{filters:f})).results||{}).contracts||0;
+    if(my!==cxSeq)return;
+    if(!total){cxRender();return;}
+    let lo=1,hi=Math.ceil(total/100);
+    while(lo<hi){const mid=Math.floor((lo+hi)/2),r=await page(mid);if(my!==cxSeq)return;
+      if(r.length&&(r[r.length-1]['End Date']||'')>=today)hi=mid;else lo=mid+1;}
+    const rows=[];
+    for(let p=lo;p<lo+5;p++){const r=await page(p);if(my!==cxSeq)return;
+      r.forEach(x=>{const e=x['End Date']||'';if(e>=today&&e<=cxCut)rows.push(x);});
+      if(r.length<100||(r[r.length-1]['End Date']||'')>cxCut)break;}
+    cxRows=rows;
+    if(!rows.length){cxRender();return;}
+    await cxMoreRows(my);
+  }catch(e){if(my===cxSeq)$('cxMeta').textContent='Could not finish the search. Try again, or pick fewer agencies. ('+(e&&e.message?e.message:e)+')';}
+  finally{$('cxGo').disabled=false;}
 }
 const cat=(c,code,fy,sb,limit)=>post('/search/spending_by_category/'+c+'/',{filters:filters(code,fy,fy,sb),limit:limit,page:1}).then(j=>j.results||[]);
 const overTime=(code,sb)=>post('/search/spending_over_time/',{group:'fiscal_year',filters:filters(code,LAST_FY-5,LAST_FY,sb)}).then(j=>j.results||[]);
@@ -326,7 +474,7 @@ function rankList(el,rows,opt){
 }
 
 async function run(code){
-  const my=++seq,fy=Number($('fy').value);curCode=code;curFy=fy;
+  const my=++seq,fy=Number($('fy').value);if(code!==curCode)cxReset();curCode=code;curFy=fy;
   $('sugg').hidden=true;$('q').value=code;
   setMsg('Pulling live numbers from USAspending for '+code+'...');
   loadOpps(code,my);
@@ -363,6 +511,7 @@ async function run(code){
     const mapOf=rows=>{const m={};rows.forEach(r=>{m[r.name]=Number(r.amount)||0;});return m;};
     rankList($('rAg'),ag,{kind:'Agency',sbMap:mapOf(agSB),link:r=>r.agency_slug?'https://www.usaspending.gov/agency/'+r.agency_slug:null});
     rankList($('rSub'),sub,{kind:'Office',sbMap:mapOf(subSB),sub:r=>r.agency_name&&r.agency_name!==r.name?r.agency_name:''});
+    topAg=ag;topSub=sub;cxChoices();
     rankList($('rSB'),recSB,{caps:true});
     rankList($('rAll'),recAll,{caps:true});
     let next='';
@@ -401,11 +550,14 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.classList.contains('sv')){const key=keyOf(b.dataset.k,b.dataset.n),at=mine.items.findIndex(i=>i.key===key);
     if(at>=0)mine.items.splice(at,1);else mine.items.push({key:key,kind:b.dataset.k,name:b.dataset.n,detail:b.dataset.d,link:b.dataset.l,note:''});
-    b.classList.toggle('on',at<0);b.textContent=at<0?'On my list':'Add to my list';renderMine();persist();}
+    b.classList.toggle('on',at<0);b.textContent=at<0?'On my list':'Add to my list';renderMine();persist();if(b.dataset.k==='Agency'||b.dataset.k==='Office')cxChoices();}
   else if(b.classList.contains('rm')){mine.items.splice(Number(b.dataset.i),1);renderMine();persist();document.querySelectorAll('button.sv.on').forEach(x=>{if(!mine.items.some(i=>i.key===keyOf(x.dataset.k,x.dataset.n))){x.classList.remove('on');x.textContent='Add to my list';}});}
-  else if(b.id==='mPrint'){try{window.print();}catch(err){}}
+  else if(b.id==='mPrint'){track('print');try{window.print();}catch(err){}}
+  else if(b.id==='cxGo'){findContracts();}
+  else if(b.id==='cxMore'){cxMoreRows(cxSeq);}
+  else if(b.id==='signout'){fetch('/api/signout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(()=>{location.href='/signin';},()=>{location.href='/signin';});}
   else if(b.id==='mCopy'){const done=ok=>{b.textContent=ok?'Copied':'Copy did not work. Use Print.';setTimeout(()=>{b.textContent='Copy my list';},2500);};
-    try{navigator.clipboard.writeText(listText()).then(()=>done(true),()=>done(false));}catch(err){done(false);}}
+    track('copy');try{navigator.clipboard.writeText(listText()).then(()=>done(true),()=>done(false));}catch(err){done(false);}}
   else if(b.id==='mClear'){if(!clearArmed){clearArmed=true;b.textContent='Tap again to clear everything';setTimeout(()=>{clearArmed=false;b.textContent='Clear my list';},4000);}
     else{clearArmed=false;b.textContent='Clear my list';mine={items:[],notes:''};$('mNotes').value='';renderMine();persist();document.querySelectorAll('button.sv.on').forEach(x=>{x.classList.remove('on');x.textContent='Add to my list';});}}
 });
@@ -413,8 +565,23 @@ document.addEventListener('input',e=>{const t=e.target;
   if(t.id==='mNotes'){mine.notes=t.value;$('mNotesP').textContent=t.value;persist();}
   else if(t.tagName==='TEXTAREA'&&t.dataset.i!==undefined){const it=mine.items[Number(t.dataset.i)];if(it){it.note=t.value;t.nextElementSibling.textContent=t.value;persist();}}
 });
+document.addEventListener('click',e=>{const a=e.target.closest('a.solx');if(a)track('solicitation',a.dataset.s);});
+$('cxOpt').addEventListener('change',()=>{if(cxRows.length)cxRender();});
+$('cxAg').addEventListener('change',e=>{if(e.target.dataset)delete e.target.dataset.auto;});
 renderMine();storeNote();
-const ready=dbGet().then(v=>{if(v&&v.items){mine=v;$('mNotes').value=mine.notes||'';renderMine();}},()=>{storeOK=false;storeNote();});
+const useList=v=>{if(v&&v.items){mine=v;$('mNotes').value=mine.notes||'';renderMine();}};
+const local=()=>dbGet().then(useList,()=>{storeOK=false;storeNote();});
+/* When this page is served by the Agency Finder server, people are signed in and their list lives in their account. On a plain file host it runs open, as before. */
+const ready=fetch('/api/me',{headers:{Accept:'application/json'}}).then(r=>r.ok&&/json/.test(r.headers.get('content-type')||'')?r.json():null).catch(()=>null).then(async me=>{
+  if(!me||!me.email)return local();
+  SERVER=true;ME=me;API='/api/usa';DATA='/api/opps/';
+  $('acct').innerHTML='Signed in as '+esc(me.name||me.email)+'  ·  '+(me.isAdmin?'<a href="/admin">Owner page</a>  ·  ':'')+'<button type="button" id="signout">Sign out</button>';$('acct').hidden=false;
+  try{const r=await fetch('/api/list');const v=r.ok?await r.json():null;
+    if(v&&v.items&&(v.items.length||v.notes))useList(v);
+    else{await local();if(mine.items.length||mine.notes)saveRemote().catch(()=>{});}
+  }catch(e){storeOK=false;}
+  storeNote();
+});
 for(let y=LAST_FY;y>=LAST_FY-2;y--){const o=document.createElement('option');o.value=y;o.textContent='FY '+y;$('fy').appendChild(o);}
 $('q').addEventListener('input',e=>suggest(e.target.value.trim()));
 $('sugg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)run(b.dataset.c);});
